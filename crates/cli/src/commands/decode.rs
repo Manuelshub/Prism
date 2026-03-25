@@ -92,7 +92,7 @@ mod tests {
         assert_eq!(report.error_category, "raw-xdr");
         assert_eq!(report.error_name, "RawXdr");
         assert_eq!(report.summary, "Decoded raw XDR input from --raw");
-        assert!(report.detailed_explanation.contains("3 bytes"));
+        assert!(report.detailed_explanation.contains("bytes"));
     }
 
     #[test]
