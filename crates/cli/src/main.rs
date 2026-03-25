@@ -17,13 +17,20 @@ mod config;
 mod output;
 mod tui;
 
-use clap::{ArgAction, Parser, Subcommand};
+use clap::{ArgAction, CommandFactory, FromArgMatches, Parser, Subcommand};
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 
+const BUILD_HASH: &str = env!("PRISM_BUILD_HASH");
+
 /// Prism — From cryptic error to root cause in one command.
 #[derive(Parser)]
-#[command(name = "prism", version, about, long_about = None)]
+#[command(
+    name = "prism",
+    disable_version_flag = true,
+    about,
+    long_about = None
+)]
 #[command(propagate_version = true)]
 struct Cli {
     /// Subcommand to execute.
@@ -71,7 +78,9 @@ enum Commands {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    let cli = Cli::parse();
+    let version = Box::leak(build_version().into_boxed_str());
+    let matches = Cli::command().version(version).get_matches();
+    let cli = Cli::from_arg_matches(&matches)?;
 
     // Initialize logging before resolving the network or dispatching commands.
     tracing_subscriber::fmt()
@@ -114,6 +123,15 @@ async fn main() -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+fn build_version() -> String {
+    format!(
+        "prism {} (build: {}) | Soroban Protocol: {}",
+        prism_core::VERSION,
+        BUILD_HASH,
+        prism_core::SOROBAN_PROTOCOL_VERSION
+    )
 }
 
 fn build_log_filter(verbose: u8) -> EnvFilter {
@@ -174,5 +192,14 @@ mod tests {
         assert!(debug.contains("prism=debug"));
         assert!(trace.contains("prism=trace"));
         assert!(trace.contains("prism_core=trace"));
+    }
+
+    #[test]
+    fn version_string_includes_build_hash_and_protocol() {
+        let version = build_version();
+
+        assert!(version.contains(prism_core::VERSION));
+        assert!(version.contains(BUILD_HASH));
+        assert!(version.contains(&prism_core::SOROBAN_PROTOCOL_VERSION.to_string()));
     }
 }
