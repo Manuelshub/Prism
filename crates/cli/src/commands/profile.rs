@@ -1,4 +1,4 @@
-//! `prism profile` — Resource consumption profile with hotspot analysis.
+//! `prism profile` - Resource consumption profile with hotspot analysis.
 
 use clap::Args;
 use prism_core::types::config::NetworkConfig;
@@ -7,6 +7,10 @@ use prism_core::types::config::NetworkConfig;
 pub struct ProfileArgs {
     /// Transaction hash to profile.
     pub tx_hash: String,
+
+    /// Output profile to a file instead of stdout.
+    #[arg(long, short)]
+    pub output_file: Option<String>,
 }
 
 pub async fn run(

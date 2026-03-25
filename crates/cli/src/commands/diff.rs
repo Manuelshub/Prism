@@ -1,4 +1,4 @@
-//! `prism diff` — Show state diff (before/after) for a transaction.
+//! `prism diff` - Show state diff (before/after) for a transaction.
 
 use clap::Args;
 use prism_core::types::config::NetworkConfig;
