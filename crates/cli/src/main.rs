@@ -11,13 +11,14 @@
 //!   prism export <tx-hash>       — Export as regression test
 //!   prism db update              — Update taxonomy database
 //!   prism clean                  — Clear local cache data
+//!   prism serve                  — Launch Web UI dashboard
 
 mod commands;
 mod config;
 mod output;
 mod tui;
 
-use clap::{ArgAction, Parser, Subcommand};
+use clap::{ ArgAction, Parser, Subcommand };
 use tracing::level_filters::LevelFilter;
 use tracing_subscriber::EnvFilter;
 
@@ -65,6 +66,8 @@ enum Commands {
     Clean(commands::clean::CleanArgs),
     /// Manage the error taxonomy database.
     Db(commands::db::DbArgs),
+    /// Launch Web UI dashboard.
+    Serve(commands::serve::ServeArgs),
 }
 
 #[tokio::main]
@@ -72,7 +75,8 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
 
     // Initialize logging before resolving the network or dispatching commands.
-    tracing_subscriber::fmt()
+    tracing_subscriber
+        ::fmt()
         .with_env_filter(build_log_filter(cli.verbose))
         .with_writer(std::io::stderr)
         .with_file(cli.verbose > 1)
@@ -108,6 +112,7 @@ async fn main() -> anyhow::Result<()> {
         Commands::Export(args) => commands::export::run(args, &network).await?,
         Commands::Clean(args) => commands::clean::run(args).await?,
         Commands::Db(args) => commands::db::run(args).await?,
+        Commands::Serve(args) => commands::serve::run(args).await?,
     }
 
     Ok(())
@@ -123,16 +128,8 @@ fn build_log_filter(verbose: u8) -> EnvFilter {
     EnvFilter::builder()
         .with_default_directive(LevelFilter::WARN.into())
         .parse_lossy("")
-        .add_directive(
-            format!("prism={prism_level}")
-                .parse()
-                .expect("valid directive"),
-        )
-        .add_directive(
-            format!("prism_core={prism_level}")
-                .parse()
-                .expect("valid directive"),
-        )
+        .add_directive(format!("prism={prism_level}").parse().expect("valid directive"))
+        .add_directive(format!("prism_core={prism_level}").parse().expect("valid directive"))
 }
 
 #[cfg(test)]
@@ -149,15 +146,14 @@ mod tests {
     fn parses_repeated_verbose_flags_as_trace() {
         let cli = Cli::try_parse_from(["prism", "-vv", "db", "update"]).expect("cli should parse");
         assert_eq!(cli.verbose, 2);
-        assert!(build_log_filter(cli.verbose)
-            .to_string()
-            .contains("prism=trace"));
+        assert!(build_log_filter(cli.verbose).to_string().contains("prism=trace"));
     }
 
     #[test]
     fn parses_long_verbose_flag_after_subcommand() {
-        let cli = Cli::try_parse_from(["prism", "decode", "--verbose", "abc123"])
-            .expect("cli should parse");
+        let cli = Cli::try_parse_from(["prism", "decode", "--verbose", "abc123"]).expect(
+            "cli should parse"
+        );
         assert_eq!(cli.verbose, 1);
     }
 

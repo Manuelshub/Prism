@@ -10,3 +10,4 @@ pub mod whatif;
 pub mod export;
 pub mod db;
 pub mod clean;
+pub mod serve;
