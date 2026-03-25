@@ -13,6 +13,7 @@
 //!   prism clean                  — Clear local cache data
 
 mod commands;
+mod config;
 mod output;
 mod tui;
 
