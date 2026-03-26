@@ -1,4 +1,4 @@
-//! `prism profile` — Resource consumption profile with hotspot analysis.
+//! `prism profile` - Resource consumption profile with hotspot analysis.
 
 use clap::Args;
 use prism_core::types::config::NetworkConfig;
@@ -7,6 +7,10 @@ use prism_core::types::config::NetworkConfig;
 pub struct ProfileArgs {
     /// Transaction hash to profile.
     pub tx_hash: String,
+
+    /// Output profile to a file instead of stdout.
+    #[arg(long, short)]
+    pub output_file: Option<String>,
 }
 
 pub async fn run(
@@ -18,10 +22,14 @@ pub async fn run(
     progress.set_message("Replaying transaction for resource profiling...");
     progress.enable_steady_tick(std::time::Duration::from_millis(100));
 
-    let trace = prism_core::replay::replay_transaction(&args.tx_hash, network).await?;
+        let trace = prism_core::replay::replay_transaction(&args.tx_hash, network).await?;
 
-    progress.finish_and_clear();
+        progress.finish_and_clear();
+    } else {
+        let trace = prism_core::replay::replay_transaction(&args.tx_hash, network).await?;
+    }
 
+    // --- Terminal output (always shown) ---
     match output_format {
         "json" => println!("{}", serde_json::to_string_pretty(&trace.resource_profile)?),
         _ => {
@@ -38,6 +46,14 @@ pub async fn run(
                 println!("{} {warning}", colored::Colorize::yellow("⚠"));
             }
         }
+    }
+
+    // --- Optional JSON save (--save flag) ---
+    if let Some(path) = save {
+        let json = serde_json::to_string_pretty(&trace.resource_profile)?;
+        std::fs::write(path, &json)
+            .map_err(|e| anyhow::anyhow!("Failed to write save file '{}': {}", path, e))?;
+        eprintln!("Saved profile to {path}");
     }
 
     Ok(())

@@ -2,7 +2,7 @@
 
 use prism_core::types::report::DiagnosticReport;
 
-use crate::output::renderers::BudgetBar;
+use crate::output::renderers::{render_section_header, BudgetBar};
 
 /// Print a diagnostic report in human-readable colored format.
 pub fn print_report(report: &DiagnosticReport) -> anyhow::Result<()> {
@@ -14,6 +14,8 @@ pub fn print_report(report: &DiagnosticReport) -> anyhow::Result<()> {
     println!("Summary: {}", report.summary);
 
     if let Some(context) = &report.transaction_context {
+        println!();
+        println!("{}", render_section_header("Resource Usage"));
         println!(
             "{}",
             BudgetBar::new(
@@ -33,6 +35,6 @@ pub fn print_report(report: &DiagnosticReport) -> anyhow::Result<()> {
             .render()
         );
     }
-
+    
     Ok(())
 }
